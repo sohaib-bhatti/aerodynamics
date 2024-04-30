@@ -1,13 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sympy as sp
 
 """
 AIRFOIL GENERATION CODE, ADAPTED FROM Divahar Jayaraman (j.divahar@yahoo.com)
 """
 
 
-def naca_4_gen(designation, n, half_cosine_spacing=True, want_file=True,
-               is_finiteTE=True):
+def airfoil_generation(designation, n, half_cos_spacing=True, want_file=True,
+                       is_finiteTE=True):
     code = str(designation)
     if len(code) != 4:
         raise Exception("4 digit NACA codes allowed only!")
@@ -26,7 +27,7 @@ def naca_4_gen(designation, n, half_cosine_spacing=True, want_file=True,
     else:
         a4 = -0.1036
 
-    if half_cosine_spacing:
+    if half_cos_spacing:
         beta = np.linspace(0, np.pi, n + 1)
         x = 0.5*(1 - np.cos(beta))
         header = "NACA" + code + ": " + str(2*n)\
@@ -114,8 +115,41 @@ def naca_4_gen(designation, n, half_cosine_spacing=True, want_file=True,
             "yLEcenter": af_yLEcenter}
 
 
+def airfoil_generation(designation):
+    code = str(designation)
+    if len(code) != 4:
+        raise Exception("4 digit NACA codes allowed only!")
+
+    m = float(code[0])/100
+    p = float(code[1])/10
+    t = float(code[2:])/100
+
+    x = sp.symbols('x')
+
+    a0 = 0.2969
+    a1 = -0.1260
+    a2 = -0.3516
+    a3 = 0.2843
+    a4 = -0.1015
+
+    yc1 = m/p**2*(2*p*x - x**2)
+    yc2 = m/(1-p)**2 * ((1 - 2*p) + 2*p*x - x**2)
+
+    theta1 = sp.atan(sp.diff(yc1, x))
+    theta2 = sp.atan(sp.diff(yc2, x))
+
+    yt = t/0.2 * (a0*sp.sqrt(x) + a1*x - a2*x**2 + a3*x**3 + a4*x**4)
+
+    xu = x - yt*sp.sin(theta1)
+    yu = yc - yt*sp.sin(theta1)
+    xl = x - yt*sp.sin(theta1)
+    yl = x - yt*sp.sin(theta1)
+
+
+
+
 def test(designation, n):
-    af = naca_4_gen(designation, n)
+    af = airfoil_generation(designation, n)
 
     fig, axes = plt.subplots(2)
     axes[0].plot(af["xU"], af["zU"])
@@ -124,6 +158,7 @@ def test(designation, n):
 
     axes[0].legend(["upper", "lower", "camber"])
     axes[0].set_aspect('equal', 'box')
+    axes[0].axvline(x=0.4, color="black", linestyle="--")
 
     axes[0].set_ylim([-0.2, 0.2])
 
@@ -131,6 +166,10 @@ def test(designation, n):
     axes[1].set_aspect('equal', 'box')
 
     axes[1].set_ylim([-0.2, 0.2])
+
+    axes[1].plot(af["xc"], 0.125*(0.8-2*af["xc"]))
+    axes[1].plot(af["xc"], 0.0555*(0.8-2*af["xc"]))
+    axes[1].axvline(x=0.4, color="black", linestyle="--")
 
     plt.show()
 
