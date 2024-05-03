@@ -6,7 +6,6 @@ from airfoil_generation import airfoil_generation
 def dz_dtheta(dx_dz, theta, c):
     # Calculate dx/dtheta using the given relation
     dx_dtheta = dx_dz / (0.5 * c * np.sin(theta))
-    
     return dx_dtheta
 
 

@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
+from sympy.utilities.lambdify import lambdify
 
 """
 AIRFOIL GENERATION CODE, ADAPTED FROM Divahar Jayaraman (j.divahar@yahoo.com)
@@ -115,7 +116,7 @@ def airfoil_generation(designation, n, half_cos_spacing=True, want_file=True,
             "yLEcenter": af_yLEcenter}
 
 
-def airfoil_generation(designation):
+def airfoil_generation2(designation):
     code = str(designation)
     if len(code) != 4:
         raise Exception("4 digit NACA codes allowed only!")
@@ -135,41 +136,75 @@ def airfoil_generation(designation):
     yc1 = m/p**2*(2*p*x - x**2)
     yc2 = m/(1-p)**2 * ((1 - 2*p) + 2*p*x - x**2)
 
-    theta1 = sp.atan(sp.diff(yc1, x))
-    theta2 = sp.atan(sp.diff(yc2, x))
+    yc = sp.Piecewise((yc1, x <= p), (yc2, (x > p) & (x < 1)))
 
-    yt = t/0.2 * (a0*sp.sqrt(x) + a1*x - a2*x**2 + a3*x**3 + a4*x**4)
+    theta = sp.atan(sp.diff(yc, x))
 
-    xu = x - yt*sp.sin(theta1)
-    yu = yc - yt*sp.sin(theta1)
-    xl = x - yt*sp.sin(theta1)
-    yl = x - yt*sp.sin(theta1)
+    yt = t/0.2 * (a0*sp.sqrt(x) + a1*x + a2*x**2 + a3*x**3 + a4*x**4)
 
+    xu = x - yt*sp.sin(theta)
+    yu = yc + yt*sp.cos(theta)
+    xl = x + yt*sp.sin(theta)
+    yl = yc - yt*sp.cos(theta)
 
+    dy = sp.diff(yc, x)
+
+    yc_func = lambdify(x, yc, modules='numpy')
+    xu_func = lambdify(x, xu, modules='numpy')
+    yu_func = lambdify(x, yu, modules='numpy')
+    xl_func = lambdify(x, xl, modules='numpy')
+    yl_func = lambdify(x, yl, modules='numpy')
+
+    dy_func = lambdify(x, dy, modules='numpy')
+
+    print(xu)
+
+    return {"name": code,
+            "x": x,
+            "yc": yc_func,
+            "xU": xu_func,
+            "yU": yu_func,
+            "xL": xl_func,
+            "yL": yl_func,
+            "dyc": dy_func,
+            "m": m,
+            "p": p,
+            "t": t,
+            }
 
 
 def test(designation, n):
-    af = airfoil_generation(designation, n)
+    af = airfoil_generation2(designation)
+
+    x = np.linspace(0, 1, 10000)
+
+    # Evaluate the functions at x_values to get y values
+    yc = af["yc"](x)
+    xu = af["xU"](x)
+    yu = af["yU"](x)
+    xl = af["xL"](x)
+    yl = af["yL"](x)
+
+    dyc = af["dyc"](x)
 
     fig, axes = plt.subplots(2)
-    axes[0].plot(af["xU"], af["zU"])
-    axes[0].plot(af["xL"], af["zL"])
-    axes[0].plot(af["xc"], af["zc"])
+    axes[0].plot(xu, yu)
+    axes[0].plot(xl, yl)
+    axes[0].plot(x, yc)
 
-    axes[0].legend(["upper", "lower", "camber"])
+    # axes[0].legend(["upper", "lower", "camber"])
     axes[0].set_aspect('equal', 'box')
-    axes[0].axvline(x=0.4, color="black", linestyle="--")
+    axes[0].axvline(x=af["p"], color="black", linestyle="--")
 
-    axes[0].set_ylim([-0.2, 0.2])
+    axes[0].set_ylim([-0.1, 0.1])
+    axes[0].set_xlim([0, 1])
 
-    axes[1].plot(af["xc"], af["dzc"])
+    axes[1].plot(x, dyc)
     axes[1].set_aspect('equal', 'box')
 
     axes[1].set_ylim([-0.2, 0.2])
 
-    axes[1].plot(af["xc"], 0.125*(0.8-2*af["xc"]))
-    axes[1].plot(af["xc"], 0.0555*(0.8-2*af["xc"]))
-    axes[1].axvline(x=0.4, color="black", linestyle="--")
+    axes[1].axvline(x=af["p"], color="black", linestyle="--")
 
     plt.show()
 
