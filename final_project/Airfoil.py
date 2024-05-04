@@ -9,9 +9,9 @@ AIRFOIL GENERATION CODE, ADAPTED FROM Divahar Jayaraman (j.divahar@yahoo.com)
 
 
 class Airfoil:
-    def __init__(self, designation, c):
+    def __init__(self, designation):
         # ALL AIRFOIL CHARACTERISTICS ARE IMPLEMENTED HERE
-        self.c = c
+
         self.code = str(designation)
         if len(self.code) != 4:
             raise Exception("4 digit NACA codes allowed only!")
