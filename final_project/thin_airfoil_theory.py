@@ -1,12 +1,7 @@
 import numpy as np
 from scipy.integrate import trapz
-from airfoil_generation import airfoil_generation
-
-
-def dz_dtheta(dx_dz, theta, c):
-    # Calculate dx/dtheta using the given relation
-    dx_dtheta = dx_dz / (0.5 * c * np.sin(theta))
-    return dx_dtheta
+from airfoil_generation import Airfoil
+import sympy as sp
 
 
 def zero_lift_AoA(dz_dx, x):
@@ -24,9 +19,8 @@ def A(dz_dx, x, n):
 
 
 def main():
-    af = airfoil_generation("2412", 30)
-    print(np.degrees(zero_lift_AoA(af["dzc"], af["xc"])))
-    print(A(af["dzc"], af["xc"], 2))
+    airfoil = Airfoil(2412)
+    print(np.degrees(zero_lift_AoA(airfoil)))
 
 
 if __name__ == '__main__':
