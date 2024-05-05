@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
 from sympy.utilities.lambdify import lambdify
+from scipy.stats import linregress
 
 """
 AIRFOIL GENERATION CODE, ADAPTED FROM Divahar Jayaraman (j.divahar@yahoo.com)
@@ -59,15 +60,21 @@ class Airfoil:
 
         theta_n = np.linspace(0, np.pi-.01, 1000)
 
-        integrand = lambdify(self.theta, self.dtheta * (sp.cos(self.theta) - 1),
+        integrand = lambdify(self.theta,
+                             self.dtheta * (sp.cos(self.theta) - 1),
                              modules='numpy')(theta_n)
 
         self.alpha_L0 = -1/np.pi * np.trapz(integrand, theta_n)
 
-        self.dtheta_n = lambdify(self.theta, self.dtheta, modules='numpy')(theta_n)
+        self.dtheta_n = lambdify(self.theta, self.dtheta,
+                                 modules='numpy')(theta_n)
         A0, A = self.fourier_terms(4)
 
-        self.Cl = np.pi*(2*A0 + A[1])
+        self.Cl = np.pi*(np.add(2*A0, A[1]))
+
+        alpha_n = np.linspace(-0.175, 0.175, 1000)
+        self.lift_slope = linregress(alpha_n, self.Cl).slope
+        self.zero_Cl = linregress(alpha_n, self.Cl).intercept
 
     def fourier_terms(self, n):
         self.alpha = sp.symbols('alpha')
@@ -124,7 +131,7 @@ class Airfoil:
 
     def plot_CL(self, n_points):
         fig1, ax1 = plt.subplots()
-        alpha_n = np.linspace(np.radians(-10), np.radians(-10), n_points)
+        alpha_n = np.linspace(np.radians(-10), np.radians(10), n_points)
 
         ax1.plot(np.degrees(alpha_n), self.Cl)
         ax1.axvline(x=np.degrees(self.alpha_L0), color="black",
@@ -135,7 +142,8 @@ class Airfoil:
 
 def test(designation):
     airfoil = Airfoil(designation)
-    airfoil.plot_airfoil(1000)
+    airfoil.plot_CL(1000)
+    print(airfoil.lift_slope)
 
 
 def main():
