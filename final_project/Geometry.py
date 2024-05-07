@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class Geometry:
+class Airplane:
     wingspan: float
     surface_area: float
     taper: float

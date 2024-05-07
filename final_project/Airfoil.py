@@ -58,7 +58,7 @@ class Airfoil:
         self.theta = sp.symbols('theta')
         self.dtheta = dy.subs(self.x, 1/2*(1 - sp.cos(self.theta)))
 
-        theta_n = np.linspace(0, np.pi-.01, 1000)
+        theta_n = np.linspace(0, np.pi-.01, 100)
 
         integrand = lambdify(self.theta,
                              self.dtheta * (sp.cos(self.theta) - 1),
@@ -72,15 +72,15 @@ class Airfoil:
 
         self.Cl = np.pi*(np.add(2*A0, A[1]))
 
-        alpha_n = np.linspace(-0.175, 0.175, 1000)
+        alpha_n = np.linspace(-0.175, 0.175, 100)
         self.lift_slope = linregress(alpha_n, self.Cl).slope
         self.zero_Cl = linregress(alpha_n, self.Cl).intercept
 
     def fourier_terms(self, n):
         self.alpha = sp.symbols('alpha')
-        theta_n = np.linspace(0, np.pi-.01, 1000)
+        theta_n = np.linspace(0, np.pi-.01, 100)
         A = np.zeros(n + 1)
-        alpha_n = np.linspace(-0.175, 0.175, 1000)
+        alpha_n = np.linspace(-0.175, 0.175, 100)
         A0 = lambdify(self.alpha,
                       self.alpha - 1/np.pi * np.trapz(self.dtheta_n, theta_n),
                       modules='numpy')(alpha_n)
@@ -105,45 +105,83 @@ class Airfoil:
 
         dyc = self.dy(x)
 
-        fig0, axes0 = plt.subplots(2, sharex=True)
-        fig0.subplots_adjust(hspace=-0.35)
+        fig, axes = plt.subplots(2, sharex=True)
+        # fig.subplots_adjust(hspace=-0.50)
 
-        axes0[0].plot(xu, yu, color="blue")
-        axes0[0].plot(xl, yl, color="blue")
-        axes0[0].plot(x, yc, color="red", linestyle=(0, (1, 1)))
+        axes[0].tick_params(axis='x',
+                            which='both',
+                            bottom=False,
+                            top=False,
+                            labelbottom=False)
 
-        axes0[0].set_aspect('equal')
-        axes0[0].axvline(x=self.p, color="black", linestyle=(0, (1, 3)))
+        axes[0].plot(xu, yu, color="blue")
+        axes[0].plot(xl, yl, color="blue")
+        axes[0].plot(x, yc, color="red", linestyle=(0, (1, 1)))
 
-        axes0[0].set_ylim([-0.05, 0.1])
-        axes0[0].set_xlim([-0., 1.])
+        axes[0].set_aspect('equal')
+        axes[0].axvline(x=self.p, color="black", linestyle=(0, (1, 3)))
 
-        axes0[1].plot(x, dyc)
-        axes0[1].set_aspect('equal')
+        axes[0].set_ylim([-0.1, 0.1])
+        axes[0].set_xlim([-0., 1.])
 
-        axes0[1].set_ylim([-0.2, 0.2])
-        axes0[1].axvline(x=self.p, color="black", linestyle=(0, (1, 3)))
+        axes[0].set_ylabel("z/c")
 
-        axes0[1].set_ylim([-0.1, 0.15])
-        axes0[1].set_xlim([-0., 1.])
+        axes[1].plot(x, dyc)
+        axes[1].set_aspect('equal')
 
-        plt.show()
+        axes[1].set_ylim([-0.2, 0.2])
+        axes[1].axvline(x=self.p, color="black", linestyle=(0, (1, 3)))
+
+        axes[1].set_ylim([-0.1, 0.15])
+        axes[1].set_xlim([-0., 1.])
+
+        axes[1].set_xlabel("$x/c$")
+        axes[1].set_ylabel("$dz/c$")
+
+        fig.suptitle("NACA " + self.code + " and camberline derivative")
+
+        fig.savefig("NACA " + self.code)
 
     def plot_CL(self, n_points):
-        fig1, ax1 = plt.subplots()
+        fig, ax = plt.subplots()
         alpha_n = np.linspace(np.radians(-10), np.radians(10), n_points)
 
-        ax1.plot(np.degrees(alpha_n), self.Cl)
-        ax1.axvline(x=np.degrees(self.alpha_L0), color="black",
-                    linestyle=(0, (1, 3)))
-        ax1.axhline(y=0, color="black", linestyle=(0, (1, 3)))
-        plt.show()
+        ax.plot(np.degrees(alpha_n), self.Cl)
+        ax.axvline(x=np.degrees(self.alpha_L0), color="black",
+                   linestyle=(0, (1, 3)))
+        ax.axhline(y=0, color="black", linestyle=(0, (1, 3)))
+
+        ax.set_xlabel("α, angle of attack (°)")
+        ax.set_ylabel("$c_l$")
+
+        ax.set_title("Lift Curve for NACA " + self.code)
+        ax.grid(visible=True)
+        fig.savefig("NACA " + self.code + " lift curve, 2D")
+
+    def plot_CLCD(self, n_points):
+        fig, ax = plt.subplots()
+        alpha_n = np.linspace(np.radians(-10), np.radians(10), n_points)
+
+        ax.plot(np.degrees(alpha_n), self.Cl)
+        ax.axvline(x=np.degrees(self.alpha_L0), color="black",
+                   linestyle=(0, (1, 3)))
+        ax.axhline(y=0, color="black", linestyle=(0, (1, 3)))
+
+        ax.set_xlabel("α, angle of attack (°)")
+        ax.set_ylabel("$c_l$")
+
+        ax.set_title("Lift Curve for NACA " + self.code)
+        ax.grid(visible=True)
+        fig.savefig("NACA " + self.code + " lift curve, 2D")
 
 
 def test(designation):
     airfoil = Airfoil(designation)
-    airfoil.plot_CL(1000)
+    airfoil.plot_airfoil(100)
+    airfoil.plot_CL(100)
     print(airfoil.lift_slope)
+    print(np.degrees(airfoil.alpha_L0))
+    # plt.show()
 
 
 def main():
