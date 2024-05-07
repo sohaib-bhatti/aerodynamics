@@ -1,6 +1,5 @@
 import numpy as np
 import sympy as sp
-from scipy.integrate import cumtrapz
 # from sympy.utilities.lambdify import lambdify
 from Airfoil import Airfoil
 from Geometry import Airplane
@@ -148,7 +147,7 @@ class Wing:
         n = self.N - 1
         y_values = np.linspace(0, self.b/2, self.N)
 
-        y = sp.symbols('y')        
+        y = sp.symbols('y')
         s = (self.root_chord - self.tip_chord)/(self.taper_start - self.b/2)
         b = self.root_chord - s * self.taper_start
         c_y = sp.Piecewise((self.root_chord, y <= self.taper_start),

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sympy as sp
 from sympy.utilities.lambdify import lambdify
 from scipy.stats import linregress
+from Fluid import Fluid
 
 """
 AIRFOIL GENERATION CODE, ADAPTED FROM Divahar Jayaraman (j.divahar@yahoo.com)
@@ -181,7 +182,8 @@ def test(designation):
     airfoil.plot_CL(100)
     print(airfoil.lift_slope)
     print(np.degrees(airfoil.alpha_L0))
-    # plt.show()
+    air = Fluid(55, 1.3, 1.8*10**-5)
+ 
 
 
 def main():
