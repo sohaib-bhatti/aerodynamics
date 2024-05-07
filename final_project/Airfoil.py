@@ -72,7 +72,7 @@ class Airfoil:
 
         self.Cl = np.pi*(np.add(2*A0, A[1]))
 
-        alpha_n = np.linspace(-0.175, 0.175, 100)
+        alpha_n = np.linspace(np.radians(-20), np.radians(20), 100)
         self.lift_slope = linregress(alpha_n, self.Cl).slope
         self.zero_Cl = linregress(alpha_n, self.Cl).intercept
 
@@ -144,7 +144,7 @@ class Airfoil:
 
     def plot_CL(self, n_points):
         fig, ax = plt.subplots()
-        alpha_n = np.linspace(np.radians(-10), np.radians(10), n_points)
+        alpha_n = np.linspace(np.radians(-20), np.radians(20), n_points)
 
         ax.plot(np.degrees(alpha_n), self.Cl)
         ax.axvline(x=np.degrees(self.alpha_L0), color="black",
@@ -160,7 +160,7 @@ class Airfoil:
 
     def plot_CLCD(self, n_points):
         fig, ax = plt.subplots()
-        alpha_n = np.linspace(np.radians(-10), np.radians(10), n_points)
+        alpha_n = np.linspace(np.radians(-20), np.radians(20), n_points)
 
         ax.plot(np.degrees(alpha_n), self.Cl)
         ax.axvline(x=np.degrees(self.alpha_L0), color="black",
