@@ -76,7 +76,12 @@ class Wing:
 
         return 1/2*(np.pi * A[0] * self.AR) * self.rho * self.V_inf**2 * self.S
         print(A)"""
-        return np.pi * A[0] * self.AR
+
+        delta = 0
+        for i in range(self.N):
+            delta += i * (A[i]/A[1])**2
+
+        return np.pi * A[0] * self.AR, delta
 
     def plot_CL(self, n_points):
         fig, ax = plt.subplots()
@@ -85,7 +90,7 @@ class Wing:
         CL = np.zeros(n_points)
 
         for i in range(n_points):
-            CL[i] = self.vortex_distribution(alpha_i[i])
+            CL[i], delta = self.vortex_distribution(alpha_i[i])
 
         ax.plot(np.degrees(alpha_i), CL, color="red")
         ax.plot(np.degrees(alpha_i), self.airfoil.Cl, color="blue")
@@ -93,7 +98,7 @@ class Wing:
                    linestyle=(0, (1, 3)))
         ax.axhline(y=0, color="black", linestyle=(0, (1, 3)))
 
-        fig.legend(("Finite wing", "2D airfoil"))
+        fig.legend(("Finite Wing", "Thin Airfoil"))
 
         ax.set_xlabel("α, angle of attack (°)")
         ax.set_ylabel("$c_l$")
@@ -110,7 +115,7 @@ class Wing:
         CD = np.zeros(n_points)
 
         for i in range(n_points):
-            CL[i] = self.vortex_distribution(alpha_i[i])
+            CL[i], delta = self.vortex_distribution(alpha_i[i])
             CD[i] = CL[i]**2/(np.pi*self.AR)
 
         ax.plot(CD, CL, color="red")
@@ -129,7 +134,7 @@ class Wing:
         ratio = np.zeros(n_points)
 
         for i in range(n_points):
-            CL = self.vortex_distribution(alpha_i[i])
+            CL, delta = self.vortex_distribution(alpha_i[i])
             CD = CL**2/(np.pi*self.AR)
 
             ratio[i] = CL/CD
@@ -167,16 +172,17 @@ class Wing:
         return drag
 
     def lift_and_drag(self, AoA):
-        CL = self.vortex_distribution(AoA)
+        CL, delta = self.vortex_distribution(AoA)
         CL_max = 1.65
         W = 1111*9.8
-        CD = CL**2/(np.pi*self.AR)
+        print(delta)
+        CD = CL**2/(np.pi*0.7*self.AR)
 
         lift = 1/2 * CL * self.rho * self.V_inf**2 * self.S
         drag_i = 1/2 * CD * self.rho * self.V_inf**2 * self.S
         drag_f = self.friction_drag()
 
-        V_stall = np.sqrt(2*W/(self.rho*self.S*CL))
+        V_stall = np.sqrt(2*W/(self.rho*self.S*CL_max))
 
         return CL, CD, lift, drag_i, drag_f, V_stall
 
@@ -188,7 +194,7 @@ def test(designation):
     wing = Wing(cessna, designation, air, 10)
 
     print(wing.lift_and_drag(np.radians(4.2)))
-    wing.plot_CL(100)
+    wing.plot_CLCD(100)
 
 
 def main():
