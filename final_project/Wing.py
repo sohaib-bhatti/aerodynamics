@@ -20,7 +20,7 @@ class Wing:
         self.mac = (self.root_chord + self.tip_chord) / 2
         self.taper_start = geometry.taper_start
 
-        self.airfoil = Airfoil(designation)
+        self.airfoil = Airfoil(designation, self.mac, fluid)
         self.lift_slope = self.airfoil.lift_slope
         self.AoA_0 = self.airfoil.alpha_L0
         self.angle_of_inc = np.radians(15)
@@ -80,7 +80,7 @@ class Wing:
 
     def plot_CL(self, n_points):
         fig, ax = plt.subplots()
-        alpha_i = np.linspace(np.radians(-20), np.radians(20), n_points)
+        alpha_i = np.linspace(np.radians(-10), np.radians(10), n_points)
 
         CL = np.zeros(n_points)
 
@@ -104,7 +104,7 @@ class Wing:
 
     def plot_CLCD(self, n_points):
         fig, ax = plt.subplots()
-        alpha_i = np.linspace(np.radians(-20), np.radians(20), n_points)
+        alpha_i = np.linspace(np.radians(-10), np.radians(10), n_points)
 
         CL = np.zeros(n_points)
         CD = np.zeros(n_points)
@@ -124,7 +124,7 @@ class Wing:
 
     def plot_CLCD_alpha(self, n_points):
         fig, ax = plt.subplots()
-        alpha_i = np.linspace(np.radians(-20), np.radians(20), n_points)
+        alpha_i = np.linspace(np.radians(-10), np.radians(10), n_points)
 
         ratio = np.zeros(n_points)
 
@@ -158,7 +158,7 @@ class Wing:
         for i in range(n):
             c_0 = float(c_y.subs(y, y_values[i]))
             c_1 = float(c_y.subs(y, y_values[i+1]))
-            Re_local = np.average((c_0, c_1)) * self.V_inf**2 *\
+            Re_local = np.average((c_0, c_1)) * self.V_inf *\
                 self.rho / self.mu
             Cf = 1.328 / np.sqrt(Re_local)
             area = self.b / self.N / 4 * (c_0 + c_1)
@@ -166,16 +166,29 @@ class Wing:
 
         return drag
 
+    def lift_and_drag(self, AoA):
+        CL = self.vortex_distribution(AoA)
+        CL_max = 1.65
+        W = 1111*9.8
+        CD = CL**2/(np.pi*self.AR)
+
+        lift = 1/2 * CL * self.rho * self.V_inf**2 * self.S
+        drag_i = 1/2 * CD * self.rho * self.V_inf**2 * self.S
+        drag_f = self.friction_drag()
+
+        V_stall = np.sqrt(2*W/(self.rho*self.S*CL))
+
+        return CL, CD, lift, drag_i, drag_f, V_stall
+
 
 def test(designation):
     cessna = Airplane(11, 16.2, 0.5, np.radians(1.5),
-                      np.radians(-1.5), 1.63, 1.13, 2.2)
+                      np.radians(-1.5), 1.63, 1.12, 2.2)
     air = Fluid(55, 1.3, 1.8*10**-5)
     wing = Wing(cessna, designation, air, 10)
 
-    # wing.plot_CL(100)
-    # wing.plot_CLCD(100)
-    print(wing.friction_drag())
+    print(wing.lift_and_drag(np.radians(4.2)))
+    wing.plot_CL(100)
 
 
 def main():

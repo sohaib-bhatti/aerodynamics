@@ -11,7 +11,7 @@ AIRFOIL GENERATION CODE, ADAPTED FROM Divahar Jayaraman (j.divahar@yahoo.com)
 
 
 class Airfoil:
-    def __init__(self, designation):
+    def __init__(self, designation, c, fluid):
         # ALL AIRFOIL CHARACTERISTICS ARE IMPLEMENTED HERE
 
         self.code = str(designation)
@@ -21,6 +21,12 @@ class Airfoil:
         self.m = float(self.code[0])/100
         self.p = float(self.code[1])/10
         self.t = float(self.code[2:])/100
+
+        self.MAC = c
+
+        self.V_inf = fluid.V_inf
+        self.rho = fluid.rho
+        self.mu = fluid.mu
 
         x = sp.symbols('x')
 
@@ -73,7 +79,7 @@ class Airfoil:
 
         self.Cl = np.pi*(np.add(2*A0, A[1]))
 
-        alpha_n = np.linspace(np.radians(-20), np.radians(20), 100)
+        alpha_n = np.linspace(np.radians(-10), np.radians(10), 100)
         self.lift_slope = linregress(alpha_n, self.Cl).slope
         self.zero_Cl = linregress(alpha_n, self.Cl).intercept
 
@@ -145,7 +151,7 @@ class Airfoil:
 
     def plot_CL(self, n_points):
         fig, ax = plt.subplots()
-        alpha_n = np.linspace(np.radians(-20), np.radians(20), n_points)
+        alpha_n = np.linspace(np.radians(-10), np.radians(10), n_points)
 
         ax.plot(np.degrees(alpha_n), self.Cl)
         ax.axvline(x=np.degrees(self.alpha_L0), color="black",
@@ -159,32 +165,32 @@ class Airfoil:
         ax.grid(visible=True)
         fig.savefig("NACA " + self.code + " lift curve, 2D")
 
-    def plot_CLCD(self, n_points):
-        fig, ax = plt.subplots()
-        alpha_n = np.linspace(np.radians(-20), np.radians(20), n_points)
+    def lift(self, n_points):
+        alpha_n = np.linspace(-10, 10, n_points)
+        i = np.where(alpha_n > 4.1)
+        i = i[0][0]
 
-        ax.plot(np.degrees(alpha_n), self.Cl)
-        ax.axvline(x=np.degrees(self.alpha_L0), color="black",
-                   linestyle=(0, (1, 3)))
-        ax.axhline(y=0, color="black", linestyle=(0, (1, 3)))
+        y = sp.symbols('y')
+        s = (1.63 - 1.13)/(2.2 - 11/2)
+        b = 1.63 - s * 2.2
+        c_y = sp.Piecewise((1.63, y <= 2.2),
+                           (s*y + b, (y > 2.2) & (y <= 11/2)))
 
-        ax.set_xlabel("α, angle of attack (°)")
-        ax.set_ylabel("$c_l$")
+        Cl = self.Cl[i]
+        print(i)
+        lift_per_span = 1/2 * Cl * self.V_inf**2 * self.MAC
+        lift_over_wing = 1/2 * Cl * self.V_inf**2 *\
+            sp.integrate(c_y, (y, 0, 11/2))
 
-        ax.set_title("Lift Curve for NACA " + self.code)
-        ax.grid(visible=True)
-        fig.savefig("NACA " + self.code + " lift curve, 2D")
+        return Cl, lift_per_span, lift_over_wing
 
 
 def test(designation):
-    airfoil = Airfoil(designation)
-    airfoil.plot_airfoil(100)
-    airfoil.plot_CL(100)
-    print(airfoil.lift_slope)
-    print(np.degrees(airfoil.alpha_L0))
     air = Fluid(55, 1.3, 1.8*10**-5)
- 
-
+    airfoil = Airfoil(designation, 1.375, air)
+    airfoil.plot_CL(100)
+    print(airfoil.lift(100))
+    
 
 def main():
     test("2412")
